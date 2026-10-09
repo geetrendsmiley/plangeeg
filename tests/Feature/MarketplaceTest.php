@@ -1,0 +1,4 @@
+<?php
+namespace Tests\Feature;
+use App\Models\{Category,Gig,Profile,User}; use Illuminate\Foundation\Testing\RefreshDatabase; use Tests\TestCase;
+class MarketplaceTest extends TestCase { use RefreshDatabase; public function test_user_can_register():void{$r=$this->post('/register',['email'=>'student@example.com','username'=>'student01','password'=>'Password123!','password_confirmation'=>'Password123!']);$r->assertRedirect('/dashboard');$this->assertDatabaseHas('users',['email'=>'student@example.com']);$this->assertDatabaseHas('profiles',['username'=>'student01']);} public function test_pending_gig_is_not_public():void{$u=User::factory()->create();$c=Category::create(['name'=>'Web Development','slug'=>'web-development']);$g=Gig::create(['seller_id'=>$u->id,'category_id'=>$c->id,'title'=>'Test','slug'=>'test-abc123','description'=>'test','price_kobo'=>500000,'status'=>'PENDING']);$this->get('/gigs/'.$g->id)->assertNotFound();} }

@@ -1,0 +1,2 @@
+<?php
+use Illuminate\Database\Migrations\Migration; use Illuminate\Database\Schema\Blueprint; use Illuminate\Support\Facades\Schema; return new class extends Migration { public function up():void{Schema::create('payment_attempts',function(Blueprint $t){$t->uuid('id')->primary();$t->uuid('order_id');$t->string('provider');$t->string('reference')->unique();$t->string('status');$t->unsignedBigInteger('amount_kobo');$t->timestamps();$t->foreign('order_id')->references('id')->on('orders');});} public function down():void{ Schema::dropIfExists('payment_attempts'); } };

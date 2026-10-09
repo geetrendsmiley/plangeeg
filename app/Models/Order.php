@@ -1,0 +1,4 @@
+<?php
+namespace App\Models;
+use Illuminate\Database\Eloquent\Model; use Illuminate\Database\Eloquent\Concerns\HasUuids;
+class Order extends Model { use HasUuids; protected $fillable=['gig_id','buyer_id','seller_id','status','currency','amount_kobo','platform_commission_kobo','processor_fee_kobo','seller_amount_kobo','payment_status','payment_reference','delivery_deadline','delivered_at','completed_at']; protected function casts():array{return ['amount_kobo'=>'integer','platform_commission_kobo'=>'integer','processor_fee_kobo'=>'integer','seller_amount_kobo'=>'integer','delivery_deadline'=>'datetime','delivered_at'=>'datetime','completed_at'=>'datetime'];} public function gig(){return $this->belongsTo(Gig::class);} public function buyer(){return $this->belongsTo(User::class,'buyer_id');} public function seller(){return $this->belongsTo(User::class,'seller_id');} public function events(){return $this->hasMany(OrderEvent::class);} }

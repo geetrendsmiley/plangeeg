@@ -1,0 +1,9 @@
+<?php
+namespace App\Http\Controllers;
+use App\Models\Gig; use App\Models\Order; use App\Services\OrderStateService; use App\Services\PaystackService; use Illuminate\Http\Request; use Illuminate\Support\Facades\DB;
+class OrderController extends Controller {
+ public function store(Request $r,Gig $gig,PaystackService $paystack){abort_unless(auth()->check(),403);abort_unless($gig->status==='ACTIVE' && $gig->seller_id!==auth()->id(),404);$commission=(int)round($gig->price_kobo*config('geegig.commission_percent')/100);$order=DB::transaction(fn()=>Order::create(['gig_id'=>$gig->id,'buyer_id'=>auth()->id(),'seller_id'=>$gig->seller_id,'amount_kobo'=>$gig->price_kobo,'platform_commission_kobo'=>$commission,'processor_fee_kobo'=>0,'seller_amount_kobo'=>$gig->price_kobo-$commission,'status'=>'PENDING','payment_status'=>'PENDING'])); try{$data=$paystack->initialize($order);$order->update(['payment_reference'=>$data['reference']]);return redirect($data['authorization_url']);}catch(\Throwable $e){$order->delete();return back()->withErrors(['payment'=>$e->getMessage()]);}}
+ public function show(Order $order){abort_unless($order->buyer_id===auth()->id()||$order->seller_id===auth()->id()||auth()->user()->is_admin,403);$order->load(['gig','buyer.profile','seller.profile','events']);return view('orders.show',compact('order'));}
+ public function deliver(Request $r,Order $order,OrderStateService $states){abort_unless($order->seller_id===auth()->id(),403);$states->transition($order,'DELIVERED',auth()->id(),$r->input('reason','Seller submitted delivery.'));return back()->with('success','Delivery submitted.');}
+ public function accept(Order $order,OrderStateService $states){abort_unless($order->buyer_id===auth()->id(),403);$states->transition($order,'RELEASED',auth()->id(),'Buyer accepted delivery.');$order->update(['completed_at'=>now()]);return back()->with('success','Order released.');}
+}
